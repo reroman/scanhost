@@ -62,24 +62,28 @@ int loadLocalData( LocalData *dst, const char *ifname )
 	strncpy( nic.ifr_name, ifname, IFNAMSIZ-1 );
 	nic.ifr_name[IFNAMSIZ-1] = '\0';
 
+	// ïndice
 	if( ioctl( sock, SIOCGIFINDEX, &nic ) < 0 ){
 		close( sock );
 		return -1;
 	}
 	dst->ifindex = nic.ifr_ifindex;
 
+	// Dirección IP asignada
 	if( ioctl( sock, SIOCGIFADDR, &nic ) < 0 ){
 		close( sock );
 		return -1;
 	}
 	memcpy( &dst->ip, nic.ifr_addr.sa_data + 2, INET_ALEN );
 
+	// Dirección MAC
 	if( ioctl( sock, SIOCGIFHWADDR, &nic ) < 0 ){
 		close( sock );
 		return -1;
 	}
 	memcpy( &dst->mac, nic.ifr_hwaddr.sa_data, ETH_ALEN );
 
+	// Máscara de subred
 	if( ioctl( sock, SIOCGIFNETMASK, &nic ) < 0 ){
 		close( sock );
 		return -1;
@@ -110,6 +114,7 @@ int createSocket( SocketType type, int msecs )
 	if( sfd < 0 )
 		return -1;
 
+	// Establece tiempo máximo para recibir datos
 	timer.tv_sec = msecs / 1000;
 	timer.tv_usec = msecs % 1000 * 1000;
 	if( setsockopt( sfd, SOL_SOCKET, SO_RCVTIMEO, &timer, sizeof(timer) ) < 0 ){
@@ -140,6 +145,7 @@ unsigned short checksum( const struct icmphdr *head )
 		*( (unsigned char*)&aux ) = *(unsigned char const*)p;
 		res += aux;
 	}
+	// Agrega los acarreos
 	res = (res >> 16) + (res & 0xffff);
 	res += (res >> 16);
 	return (unsigned short)~res;
@@ -162,6 +168,7 @@ int icmp_isUp( int sfd, struct in_addr ip )
 	struct iphdr *iph = (struct iphdr*) packet;
 	pid_t pid = getpid();
 
+	// Llena los campos del mensaje ICMP y los datos del destino
 	remote.sin_family = AF_INET;
 	remote.sin_port = 0;
 	remote.sin_addr.s_addr = ip.s_addr;
@@ -176,6 +183,7 @@ int icmp_isUp( int sfd, struct in_addr ip )
 				(struct sockaddr*) &remote, sizeof(remote) ) < 0 )
 		return -1;
 
+	// Ciclo para recibir mensajes ICMP
 	while( 1 ){
 		memset( packet, 0, sizeof(packet) );
 		if( recvfrom( sfd, iph, sizeof(packet), 0, NULL, 0 ) <= 0 ){
@@ -208,6 +216,7 @@ int arp_isUp( int sfd, const LocalData *data, struct in_addr ip )
 	struct arphdr *arph = (struct arphdr*) frame;
 	Eth_ARP *arpm = (Eth_ARP*) (arph + 1);
 
+	// Llenado del mensaje ARP y los datos de destino
 	remote.sll_family = AF_PACKET;
 	remote.sll_protocol = htons( ETH_P_ARP );
 	remote.sll_ifindex = data->ifindex;
@@ -229,6 +238,7 @@ int arp_isUp( int sfd, const LocalData *data, struct in_addr ip )
 				(struct sockaddr*) &remote, sizeof(remote) ) < 0 )
 		return -1;
 
+	// Ciclo para recibir mensajes ARP
 	while( 1 ){
 		memset( frame, 0, ETHARPFRAME_LEN );
 		if( recvfrom( sfd, frame, ETHARPFRAME_LEN, 0, NULL, 0 ) < 0 )
@@ -278,7 +288,9 @@ void ipSwap( struct in_addr *a, struct in_addr *b )
 "\t%s -i wlp1s0 -p arp -t 200 -r 192.168.1.24\n"\
 "\nBugs: Ricardo Román <reroman4@gmail.com>\n"
 
-volatile int running = 1;
+volatile int running = 1; ///< Controla el ciclo para el scanner
+
+/** Interrumpe la ejecución del escáner */
 void sigint(){
 	running = 0;
 }
@@ -295,6 +307,7 @@ int main( int argc, char **argv )
 		 *interface = NULL,
 		 *aux;
 
+	// Parser de parámetros
 	while( (opt = getopt( argc, argv, ":i:p:t:r:h" )) != -1 ){
 		switch( opt ){
 			case 'i':
@@ -334,22 +347,25 @@ int main( int argc, char **argv )
 		}
 	}
 
+	// Valida la interfaz
 	if( !interface ){
 		fprintf( stderr, "Error: No interface given. Use -h for help\n" );
 		return -1;
 	}
 
+	// Carga datos locales
 	if( loadLocalData( &data, interface ) < 0 ){
 		perror( interface );
 		return -1;
 	}
 
+	// Valida si hay una IP específica
 	if( strFirst ){
 		if( !inet_aton( strFirst, &first ) ){
 			fprintf( stderr, "%s: Invalid address\n", strFirst );
 			return -1;
 		}
-		if( strLast ){
+		if( strLast ){ // Valida si hay un rango
 			if( !inet_aton( strLast, &last ) ){
 				fprintf( stderr, "%s: Invalid address\n", strLast );
 				return -1;
@@ -364,17 +380,17 @@ int main( int argc, char **argv )
 			}
 		}
 		else{
-			last = ipAddOne( first );
 			total = 1;
 		}
 	}
-	else{
+	else{ // Si no... se obtiene el rango a partir de los datos de red locales.
 		first.s_addr = data.ip.s_addr & data.netmask.s_addr;
 		first = ipAddOne( first );
 		last.s_addr = data.ip.s_addr | ~data.netmask.s_addr;
 		total = ntohl( last.s_addr ) - ntohl( first.s_addr );
 	}
 
+	// Crea socket
 	if( (sfd = createSocket( type, waitTime ) ) < 0 ){
 		perror( "Failed to create socket" );
 		return 2;
@@ -383,6 +399,7 @@ int main( int argc, char **argv )
 	signal( SIGINT, sigint );
 	puts( "CTRL-C to stop scanning" );
 
+	// Ciclo para escáner
 	for( int i = 1 ; i <= total && running ; i++, first = ipAddOne(first) ){
 		printf( "\r(%d%%) Testing %s...", (int)(100.0 / total * i), inet_ntoa(first) );
 		fflush( stdout );
@@ -391,7 +408,7 @@ int main( int argc, char **argv )
 			ups++;
 		}
 		else{
-			if( type == ARPSocket ){
+			if( type == ARPSocket )
 				switch( arp_isUp( sfd, &data, first )  ){
 					case -1:
 						perror( " send request" );
@@ -400,7 +417,6 @@ int main( int argc, char **argv )
 						puts( " is up"  );
 						ups++;
 				}
-			}
 			else
 				switch( icmp_isUp( sfd, first ) ){
 					case -1:
