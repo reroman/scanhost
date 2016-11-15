@@ -1,0 +1,33 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+.scanhost.c.swp	.scanhost.c.swp	1;"	F
+ARPSocket	scanhost.c	/^	ARPSocket,$/;"	e	enum:__anon1	file:
+ETHARPFRAME_LEN	scanhost.c	36;"	d	file:
+Eth_ARP	scanhost.c	/^}__attribute__((__packed__)) Eth_ARP;$/;"	t	typeref:struct:__anon3	file:
+HELPMSG	scanhost.c	201;"	d	file:
+ICMPSocket	scanhost.c	/^	ICMPSocket$/;"	e	enum:__anon1	file:
+INET_ALEN	scanhost.c	35;"	d	file:
+LocalData	scanhost.c	/^}LocalData;$/;"	t	typeref:struct:__anon2	file:
+SocketType	scanhost.c	/^}SocketType;$/;"	t	typeref:enum:__anon1	file:
+ar_sha	scanhost.c	/^	struct ether_addr ar_sha;$/;"	m	struct:__anon3	typeref:struct:__anon3::ether_addr	file:	access:public
+ar_sip	scanhost.c	/^	struct in_addr ar_sip;$/;"	m	struct:__anon3	typeref:struct:__anon3::in_addr	file:	access:public
+ar_tha	scanhost.c	/^	struct ether_addr ar_tha;$/;"	m	struct:__anon3	typeref:struct:__anon3::ether_addr	file:	access:public
+ar_tip	scanhost.c	/^	struct in_addr ar_tip;$/;"	m	struct:__anon3	typeref:struct:__anon3::in_addr	file:	access:public
+arp_isUp	scanhost.c	/^int arp_isUp( int sfd, const LocalData *data, struct in_addr ip )$/;"	f	signature:( int sfd, const LocalData *data, struct in_addr ip )
+checksum	scanhost.c	/^unsigned short checksum( const struct icmphdr *head )$/;"	f	signature:( const struct icmphdr *head )
+createSocket	scanhost.c	/^int createSocket( SocketType type, int msecs )$/;"	f	signature:( SocketType type, int msecs )
+icmp_isUp	scanhost.c	/^int icmp_isUp( int sfd, struct in_addr ip )$/;"	f	signature:( int sfd, struct in_addr ip )
+ifindex	scanhost.c	/^	int ifindex;$/;"	m	struct:__anon2	file:	access:public
+ip	scanhost.c	/^	struct in_addr ip;$/;"	m	struct:__anon2	typeref:struct:__anon2::in_addr	file:	access:public
+ipAddOne	scanhost.c	/^struct in_addr ipAddOne( struct in_addr ip )$/;"	f	signature:( struct in_addr ip )
+loadLocalData	scanhost.c	/^int loadLocalData( LocalData *dst, const char *ifname )$/;"	f	signature:( LocalData *dst, const char *ifname )
+mac	scanhost.c	/^	struct ether_addr mac;$/;"	m	struct:__anon2	typeref:struct:__anon2::ether_addr	file:	access:public
+main	scanhost.c	/^int main( int argc, char **argv )$/;"	f	signature:( int argc, char **argv )
+netmask	scanhost.c	/^	struct in_addr netmask;$/;"	m	struct:__anon2	typeref:struct:__anon2::in_addr	file:	access:public
+scanhost	scanhost	1;"	F
+scanhost.c	scanhost.c	1;"	F
+tags	tags	1;"	F
