@@ -325,7 +325,7 @@ int main( int argc, char **argv )
 				break;
 			case 't':
 				waitTime = strtol( optarg, &aux, 10 );
-				if( *aux ){
+				if( *aux || !waitTime ){
 					fprintf( stderr, "%s: Invalid time\n", optarg );
 					return -1;
 				}
