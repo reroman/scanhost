@@ -156,10 +156,11 @@ unsigned short checksum( const struct icmphdr *head )
  * @param sfd Socket de tipo ICMPSocket por el cual se envian/reciben
  * los datos.
  * @param ip IP del host a verificar.
+ * @param data Sirve para la compatibilidad con arp_isUP().
  * @return 1 si el host responde el mensaje, 0 en caso contrario y -1
  * en caso de error.
  */
-int icmp_isUp( int sfd, struct in_addr ip )
+int icmp_isUp( int sfd, struct in_addr ip, const LocalData *data )
 {
 	char packet[4096];
 	struct sockaddr_in remote;
@@ -209,7 +210,7 @@ int icmp_isUp( int sfd, struct in_addr ip )
  * @return 1 si el host responde el mensaje, 0 en caso contrario y -1 en
  * caso de error.
  */
-int arp_isUp( int sfd, const LocalData *data, struct in_addr ip )
+int arp_isUp( int sfd, struct in_addr ip, const LocalData *data )
 {
 	char frame[ETHARPFRAME_LEN];
 	struct sockaddr_ll remote;
@@ -306,6 +307,7 @@ int main( int argc, char **argv )
 		 *strLast = NULL,
 		 *interface = NULL,
 		 *aux;
+	int (*isUp)(int, struct in_addr, const LocalData*);
 
 	// Parser de parámetros
 	while( (opt = getopt( argc, argv, ":i:p:t:r:h" )) != -1 ){
@@ -399,6 +401,11 @@ int main( int argc, char **argv )
 	signal( SIGINT, sigint );
 	puts( "CTRL-C to stop scanning" );
 
+	if( type == ARPSocket )
+		isUp = &arp_isUp;
+	else
+		isUp = &icmp_isUp;
+
 	// Ciclo para escáner
 	for( int i = 1 ; i <= total && running ; i++, first = ipAddOne(first) ){
 		printf( "\r(%d%%) Testing %s...", (int)(100.0 / total * i), inet_ntoa(first) );
@@ -408,24 +415,14 @@ int main( int argc, char **argv )
 			ups++;
 		}
 		else{
-			if( type == ARPSocket )
-				switch( arp_isUp( sfd, &data, first )  ){
-					case -1:
-						perror( " send request" );
-						break;
-					case 1:
-						puts( " is up"  );
-						ups++;
-				}
-			else
-				switch( icmp_isUp( sfd, first ) ){
-					case -1:
-						perror( " send request" );
-						break;
-					case 1:
-						puts( " is up" );
-						ups++;
-				}
+			switch( isUp(sfd, first, &data) ){
+				case -1:
+					perror( " send request" );
+					break;
+				case 1:
+					puts( " is up" );
+					ups++;
+			}
 		}
 	}
 	close( sfd );
